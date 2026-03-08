@@ -1,6 +1,5 @@
 import { Layout } from '@/components/Layout';
 import { AdminClient } from '@/components/AdminClient';
-import { ResetPledgesButton } from '@/components/ResetPledgesButton';
 import { getAdminArtifacts } from '@/lib/adminData';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +15,6 @@ export default async function AdminPage() {
       <p className="mt-2 text-slate-600">
         View processing history and retry failed artifacts.
       </p>
-      <ResetPledgesButton className="mt-4" />
       <AdminClient artifacts={artifacts} />
     </Layout>
   );
