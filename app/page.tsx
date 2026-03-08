@@ -2,40 +2,11 @@ import { Layout } from '@/components/Layout';
 import { ArtifactUpload } from '@/components/ArtifactUpload';
 import { PipelineMonitor } from '@/components/PipelineMonitor';
 import { DashboardPanel } from '@/components/DashboardPanel';
-
-async function getData() {
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const [promisesRes, activeRes, completedRes, countsRes, roundsRes] = await Promise.all([
-    fetch(`${base}/api/promises?status=RECORDED`, { cache: 'no-store' }),
-    fetch(`${base}/api/promises?active=true`, { cache: 'no-store' }),
-    fetch(`${base}/api/promises?reviewed=true`, { cache: 'no-store' }),
-    fetch(`${base}/api/promises/counts`, { cache: 'no-store' }),
-    fetch(`${base}/api/review-rounds/open`, { cache: 'no-store' }),
-  ]);
-  const [promisesData, activeData, completedData, countsData, roundsData] = await Promise.all([
-    promisesRes.json(),
-    activeRes.json(),
-    completedRes.json(),
-    countsRes.json(),
-    roundsRes.json(),
-  ]);
-  return {
-    promises: promisesData.promises || [],
-    triggeredPromises: activeData.promises || [],
-    completedPromises: completedData.promises || [],
-    counts: {
-      total: countsData.total ?? 0,
-      underReview: countsData.underReview ?? 0,
-      reviewed: countsData.reviewed ?? 0,
-      notFulfilled: countsData.notFulfilled ?? 0,
-      pledgesVoted: countsData.pledgesVoted ?? 0,
-    },
-    openRounds: roundsData.rounds || [],
-  };
-}
+import { getDashboardData } from '@/lib/dashboardData';
 
 export default async function HomePage() {
-  const { promises, triggeredPromises, completedPromises, counts, openRounds } = await getData();
+  const { promises, triggeredPromises, completedPromises, counts, openRounds } =
+    await getDashboardData();
   const firstRoundId = openRounds[0]?.id;
 
   return (
