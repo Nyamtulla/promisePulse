@@ -1,6 +1,5 @@
 import { readFile } from 'fs/promises';
 import { extname } from 'path';
-import { PDFParse } from 'pdf-parse';
 
 const SUPPORTED_EXTENSIONS = ['.txt', '.md', '.pdf'];
 
@@ -32,19 +31,33 @@ export async function readArtifact(filePath: string, filename: string): Promise<
   }
 
   if (ext === '.pdf') {
-    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    // Dynamic import to avoid loading pdfjs-dist (requires canvas/DOMMatrix) until needed.
+    // This prevents upload-artifact route from crashing on Vercel cold start.
     try {
-      const result = await parser.getText();
-      await parser.destroy();
-      return {
-        filename,
-        fileType: 'pdf',
-        extractedText: result.text || '',
-        size,
-      };
-    } catch (e) {
-      await parser.destroy();
-      throw e;
+      const { PDFParse } = await import('pdf-parse');
+      const parser = new PDFParse({ data: new Uint8Array(buffer) });
+      try {
+        const result = await parser.getText();
+        await parser.destroy();
+        return {
+          filename,
+          fileType: 'pdf',
+          extractedText: result.text || '',
+          size,
+        };
+      } catch (e) {
+        await parser.destroy();
+        throw e;
+      }
+    } catch (loadErr) {
+      const msg =
+        loadErr instanceof Error ? loadErr.message : String(loadErr);
+      if (msg.includes('DOMMatrix') || msg.includes('canvas') || msg.includes('@napi-rs/canvas')) {
+        throw new Error(
+          'PDF parsing is unavailable in this environment. Please upload .txt or .md files instead, or convert your PDF to text before uploading.'
+        );
+      }
+      throw loadErr;
     }
   }
 
