@@ -19,10 +19,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex flex-1 justify-end">
             <Link
-              href="/admin"
+              href="/history"
               className="text-sm font-medium text-slate-600 hover:text-slate-900 underline-offset-4 hover:underline"
             >
-              Admin
+              History
             </Link>
           </div>
         </div>

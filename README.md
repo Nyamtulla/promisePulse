@@ -2,7 +2,15 @@
 
 AI & blockchain–powered tracking for campaign pledges and everyday government commitments.
 
-**Live:** [gp.nyamshaik.me](https://gp.nyamshaik.me)
+**Live:** [https://govpls.vercel.app/](https://govpls.vercel.app/)
+
+---
+
+## Vision
+
+**Full product:** GovernancePulse automatically scrapes local newspapers and government websites based on the user’s selected location. Pledges, updates, and official announcements are ingested in the backend and surfaced on the frontend for tracking and voting—no manual uploads needed.
+
+**MVP (current):** Manual file upload simulates that flow. Users select a location (Lawrence, Kansas City, Topeka, Wichita, etc.) and upload `.txt`, `.md`, or `.pdf` files containing pledge text. An optional **Fetch news** feature uses the [GNews API](https://gnews.io) to pull location-based articles as a step toward automatic ingestion.
 
 ---
 
@@ -19,17 +27,19 @@ Local governments and representatives make infrastructure promises—roads, drai
 
 ---
 
-## What
+## What (MVP)
 
 GovernancePulse is a full-stack platform that:
 
-1. **Accepts** documents via drag-and-drop upload or `artifacts/incoming` folder
+1. **Accepts** documents via drag-and-drop upload or `artifacts/incoming` folder *(full product: automatic scrape from local news & gov sites by location)*
 2. **Extracts** text from `.txt`, `.md`, and `.pdf` files
 3. **Classifies** content with AI (Gemini) as new promises, progress updates, or irrelevant
 4. **Stores** artifacts on IPFS (Pinata) for immutable evidence
 5. **Records** promises and evidence on Polygon Amoy via a smart contract
 6. **Enables** citizens to vote on progress (Not Visible → In Progress → Partially Done → Done)
 7. **Computes** final promise status from vote distribution and updates on-chain
+
+**Location selector:** Users choose a city/region. In the full product, this drives which sources are scraped. In the MVP, it provides context and official info (mayor, city manager, council).
 
 ---
 
@@ -51,9 +61,12 @@ GovernancePulse is a full-stack platform that:
 
 ### Document Ingestion
 
+**Current (MVP):**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Upload (web) OR artifacts/incoming (watcher)                    │
+│  Manual upload (web) OR artifacts/incoming (watcher)             │
+│  Optional: Fetch news by location (GNews API)                    │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -92,13 +105,14 @@ GovernancePulse is a full-stack platform that:
 
 | Route | Description |
 |-------|-------------|
-| `/` | Dashboard: upload, live pipeline, pledges, active rounds, KPIs |
+| `/` | Dashboard: location selector, upload, live pipeline, pledges, active rounds, KPIs |
 | `/dashboard` | Redirects to `/` |
 | `/promises` | Browse pledges with filters (status, category, region) |
 | `/promises/[id]` | Promise detail, timeline, evidence, IPFS source link |
 | `/review/[roundId]/vote` | Vote on promise progress |
 | `/review/[roundId]/results` | Vote distribution and final status |
-| `/admin` | Artifact processing history, retry failed artifacts |
+| `/history` | Processing history, artifact list, retry failed |
+| `/admin` | Redirects to `/history` |
 
 ---
 
@@ -117,8 +131,19 @@ GovernancePulse is a full-stack platform that:
 | `ARTIFACTS_PATH` | No | Path to artifacts folder (default: `./artifacts`) |
 | `REVIEW_ROUND_DURATION_HOURS` | No | Hours until review round closes (overrides days) |
 | `REVIEW_ROUND_DURATION_DAYS` | No | Days until review round closes (default: 7) |
+| `GNEWS_API_KEY` | No | [GNews](https://gnews.io) API key for location-based news fetch |
 
 *Required for on-chain features. The app works without blockchain for classification and storage.
+
+---
+
+## Roadmap
+
+| Phase | Description |
+|-------|-------------|
+| **MVP (current)** | Manual upload, GNews fetch by location, AI classification, IPFS + blockchain, citizen voting |
+| **v2** | Automatic scraping from local newspapers and government websites driven by selected location |
+| **Future** | Broader source coverage, RSS feeds, official press releases, real-time monitoring |
 
 ---
 
@@ -158,7 +183,8 @@ npm run watcher
 
 ## Demo Flow
 
-1. **Upload a pledge** — Drag & drop a `.txt`, `.md`, or `.pdf` with infrastructure promises (e.g. "We will install 120 LED streetlights along Oak Street by September 2025")
+1. **Select location** — Choose a city (e.g. Lawrence, KS, Topeka) to see relevant officials and context
+2. **Upload a pledge** — Drag & drop a `.txt`, `.md`, or `.pdf` with infrastructure promises (e.g. "We will install 120 LED streetlights along Oak Street by September 2025"). *Alternative: Use Fetch news (if GNEWS_API_KEY is set) to pull location-based articles*
 2. **Watch the pipeline** — Detected → Extracted → Stored on IPFS → Classified by AI → Recorded on blockchain
 3. **Upload an update** — "Oak Street streetlight installation is 50% complete" → Matched to existing pledge, review round opens
 4. **Vote** — Click "Vote now" → Choose progress level → Transaction on Polygon Amoy
@@ -200,7 +226,8 @@ In Vercel → Settings → Domains, add your subdomain (e.g. `gp.yourdomain.com`
 ```
 ├── app/                    # Next.js App Router
 │   ├── page.tsx            # Dashboard (upload + pipeline + pledges)
-│   ├── admin/              # Artifact admin
+│   ├── history/            # Processing history
+│   ├── admin/              # Redirects to /history
 │   ├── promises/           # Browse, filter, detail
 │   ├── review/             # Vote, results
 │   └── api/                # API routes
