@@ -2,6 +2,8 @@
 
 AI & blockchain–powered tracking for campaign pledges and everyday government commitments.
 
+**Live:** [gp.nyamshaik.me](https://gp.nyamshaik.me)
+
 ---
 
 ## Why
@@ -21,7 +23,7 @@ Local governments and representatives make infrastructure promises—roads, drai
 
 GovernancePulse is a full-stack platform that:
 
-1. **Monitors** a local `artifacts/incoming` folder for new documents
+1. **Accepts** documents via drag-and-drop upload or `artifacts/incoming` folder
 2. **Extracts** text from `.txt`, `.md`, and `.pdf` files
 3. **Classifies** content with AI (Gemini) as new promises, progress updates, or irrelevant
 4. **Stores** artifacts on IPFS (Pinata) for immutable evidence
@@ -31,86 +33,58 @@ GovernancePulse is a full-stack platform that:
 
 ---
 
-## How — Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
 | **Frontend** | Next.js 16, React 19, Tailwind CSS 4 |
 | **Backend** | Next.js API Routes (serverless) |
 | **Database** | MongoDB, Mongoose |
-| **AI** | Google Gemini 2.5 Flash (classification, extraction) |
+| **AI** | Google Gemini 2.5 Flash (classification) |
 | **Storage** | Pinata (IPFS), ipfs.io gateway |
-| **Blockchain** | Polygon Amoy, Solidity, Ethers.js, Hardhat |
-| **File Watch** | Chokidar (Node.js) |
-
-### Architecture
-
-```
-artifacts/incoming/*.txt|.md|.pdf
-        │
-        ▼
-   [Chokidar Watcher]
-        │ POST /api/internal/process-artifact
-        ▼
-   [Artifact Processor]
-        │
-        ├─► [Artifact Reader]  (text extraction)
-        ├─► [Pinata]           (upload to IPFS → CID)
-        ├─► [Gemini AI]        (classify: NEW_PROMISE | PROMISE_UPDATE | IRRELEVANT)
-        └─► [Blockchain]       (addPromise, addEvidence, openReviewRound)
-        │
-        ▼
-   [MongoDB]  (PromiseRecord, TriggerEvent, ReviewRound, TimelineEvent)
-```
-
-### Smart Contract (Solidity)
-
-- **`PromisePulse.sol`** — Records promises (hash, category, region, IPFS CID), links evidence, opens review rounds, and accepts votes
-- **Vote options:** 0=Not Visible, 1=In Progress, 2=Partially Done, 3=Done, 4=Not Sure
-- **Events:** `PromiseRecorded`, `EvidenceLinked`, `ReviewRoundOpened`, `VoteCast`, `StatusUpdated`
-- Deployed on **Polygon Amoy** (testnet)
-
-### Data Flow
-
-- **NEW_PROMISE** → Create promise in DB → Upload to IPFS → `addPromise()` on-chain → Move file to `artifacts/processed`
-- **PROMISE_UPDATE** → Create TriggerEvent → `addEvidence()` + `openReviewRound()` → Citizens vote → `castVote()` → Status computed → `updateStatus()` when round closes
+| **Blockchain** | Polygon Amoy, Solidity, Viem, Hardhat |
+| **File Processing** | pdf-parse, Chokidar (optional watcher) |
 
 ---
 
-## Demo (for Judges)
+## Architecture
 
-### Prerequisites
+### Document Ingestion
 
-- Node.js 18+
-- MongoDB (local or Atlas)
-- API keys: [Pinata](https://www.pinata.cloud/), [Google AI Studio](https://aistudio.google.com/), Polygon Amoy wallet with test MATIC
-
-### Setup
-
-```bash
-npm install
-cp .env.example .env
-# Fill: MONGODB_URI, PINATA_API_KEY, PINATA_SECRET, GEMINI_API_KEY, PRIVATE_KEY
-
-npm run compile && npm run deploy
-# Add CONTRACT_ADDRESS to .env
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Upload (web) OR artifacts/incoming (watcher)                    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Artifact Processor                                              │
+│  ├─ Artifact Reader   (text extraction: txt, md, pdf)           │
+│  ├─ Pinata            (upload to IPFS → CID)                    │
+│  ├─ Gemini AI         (classify: NEW_PROMISE | PROMISE_UPDATE   │
+│  │                     | IRRELEVANT)                            │
+│  └─ Blockchain        (addPromise, addEvidence, openReviewRound)│
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  MongoDB  (Artifact, PromiseRecord, TriggerEvent,               │
+│            ReviewRound, Vote, TimelineEvent)                     │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Run
+### Data Flow
 
-```bash
-npm run dev
-```
+- **NEW_PROMISE** → Create PromiseRecord → Upload to IPFS → `addPromise()` on-chain → Move to `artifacts/processed`
+- **PROMISE_UPDATE** → Create TriggerEvent → `addEvidence()` + `openReviewRound()` → Citizens vote → `castVote()` → Status computed from votes → `updateStatus()` when round closes
+- **IRRELEVANT** → Mark as unmatched, no on-chain action
 
-### Try It
+### Smart Contract (Solidity)
 
-1. Open **http://localhost:3000** or **/dashboard**
-2. **Drag & drop** (or click to upload) a `.txt`, `.md`, or `.pdf` file with infrastructure promises (roads, drainage, streetlights, etc.)
-3. Watch the **live pipeline** — artifact detected → extracted → classified → stored on IPFS → recorded on blockchain
-4. Upload a follow-up file (e.g. "Downtown road work has started") → triggers review round
-5. Vote at Dashboard → "Vote now" → View results
-
-**Optional:** Run `npm run watcher` to also process files dropped into `artifacts/incoming`.
+- **`PromisePulse.sol`** — Records promises (hash, category, region, IPFS CID), links evidence, opens review rounds, accepts votes
+- **Vote options:** 0=Not Visible, 1=In Progress, 2=Partially Done, 3=Done, 4=Not Sure
+- **Events:** `PromiseRecorded`, `EvidenceLinked`, `ReviewRoundOpened`, `VoteCast`, `StatusUpdated`
+- Deployed on **Polygon Amoy** (testnet)
 
 ---
 
@@ -118,13 +92,92 @@ npm run dev
 
 | Route | Description |
 |-------|-------------|
-| `/` | Home |
-| `/dashboard` | Stats, latest promises, active review rounds |
-| `/promises` | Browse with filters |
-| `/promises/[id]` | Detail, timeline, evidence, source artifact (IPFS) |
+| `/` | Dashboard: upload, live pipeline, pledges, active rounds, KPIs |
+| `/dashboard` | Redirects to `/` |
+| `/promises` | Browse pledges with filters (status, category, region) |
+| `/promises/[id]` | Promise detail, timeline, evidence, IPFS source link |
 | `/review/[roundId]/vote` | Vote on promise progress |
-| `/review/[roundId]/results` | Vote results |
-| `/admin` | Artifact history, retry failed |
+| `/review/[roundId]/results` | Vote distribution and final status |
+| `/admin` | Artifact processing history, retry failed artifacts |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MONGODB_URI` | Yes | MongoDB connection string (Atlas or local) |
+| `PINATA_API_KEY` | Yes | Pinata API key for IPFS |
+| `PINATA_SECRET` | Yes | Pinata API secret |
+| `GEMINI_API_KEY` | Yes | Google AI Studio API key for Gemini |
+| `PRIVATE_KEY` | Yes* | Wallet private key for blockchain writes |
+| `RPC_URL` | No | Polygon Amoy RPC (default: `https://rpc-amoy.polygon.technology`) |
+| `CONTRACT_ADDRESS` | Yes* | Deployed PromisePulse contract address |
+| `NEXT_PUBLIC_CHAIN_ID` | No | Chain ID for frontend (default: 80002) |
+| `ARTIFACTS_PATH` | No | Path to artifacts folder (default: `./artifacts`) |
+| `REVIEW_ROUND_DURATION_HOURS` | No | Hours until review round closes (overrides days) |
+| `REVIEW_ROUND_DURATION_DAYS` | No | Days until review round closes (default: 7) |
+
+*Required for on-chain features. The app works without blockchain for classification and storage.
+
+---
+
+## Local Setup
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB (local or [Atlas](https://cloud.mongodb.com))
+- API keys: [Pinata](https://www.pinata.cloud/), [Google AI Studio](https://aistudio.google.com/), Polygon Amoy wallet with test MATIC
+
+### Install & Run
+
+```bash
+npm install
+cp .env.example .env
+# Edit .env with MONGODB_URI, PINATA_*, GEMINI_API_KEY, PRIVATE_KEY
+
+npm run compile
+npm run deploy
+# Add CONTRACT_ADDRESS to .env
+
+npm run dev
+```
+
+Open **http://localhost:3000**
+
+### Optional: Folder Watcher
+
+Process files dropped into `artifacts/incoming` automatically:
+
+```bash
+npm run watcher
+```
+
+---
+
+## Demo Flow
+
+1. **Upload a pledge** — Drag & drop a `.txt`, `.md`, or `.pdf` with infrastructure promises (e.g. "We will install 120 LED streetlights along Oak Street by September 2025")
+2. **Watch the pipeline** — Detected → Extracted → Stored on IPFS → Classified by AI → Recorded on blockchain
+3. **Upload an update** — "Oak Street streetlight installation is 50% complete" → Matched to existing pledge, review round opens
+4. **Vote** — Click "Vote now" → Choose progress level → Transaction on Polygon Amoy
+5. **View results** — See vote distribution and updated pledge status
+
+---
+
+## Deployment (Vercel)
+
+1. **Connect** your GitHub repo to [Vercel](https://vercel.com)
+2. **Add environment variables** in Project → Settings → Environment Variables:
+   - `MONGODB_URI`, `PINATA_API_KEY`, `PINATA_SECRET`, `GEMINI_API_KEY`
+   - `PRIVATE_KEY`, `RPC_URL`, `CONTRACT_ADDRESS`, `NEXT_PUBLIC_CHAIN_ID`
+3. **MongoDB Atlas** — Add `0.0.0.0/0` to Network Access whitelist for Vercel
+4. **Deploy** — Push to main or trigger redeploy
+
+### Custom Domain
+
+In Vercel → Settings → Domains, add your subdomain (e.g. `gp.yourdomain.com`). Add a CNAME record pointing to `cname.vercel-dns.com`.
 
 ---
 
@@ -132,8 +185,44 @@ npm run dev
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Next.js dev server |
-| `npm run watcher` | Folder watcher |
+| `npm run dev` | Next.js dev server (webpack) |
+| `npm run dev:turbo` | Next.js dev server (Turbopack) |
 | `npm run build` | Production build |
-| `npm run compile` | Compile Solidity |
-| `npm run deploy` | Deploy to Polygon Amoy |
+| `npm run start` | Production server |
+| `npm run watcher` | Process files from `artifacts/incoming` |
+| `npm run compile` | Compile Solidity contracts |
+| `npm run deploy` | Deploy PromisePulse to Polygon Amoy |
+
+---
+
+## Project Structure
+
+```
+├── app/                    # Next.js App Router
+│   ├── page.tsx            # Dashboard (upload + pipeline + pledges)
+│   ├── admin/              # Artifact admin
+│   ├── promises/           # Browse, filter, detail
+│   ├── review/             # Vote, results
+│   └── api/                # API routes
+├── components/             # React components
+├── contracts/              # Solidity (PromisePulse.sol)
+├── lib/                    # Core logic
+│   ├── ai.ts               # Gemini classification
+│   ├── artifactProcessor.ts
+│   ├── artifactReader.ts
+│   ├── blockchain.ts       # Viem + contract calls
+│   ├── dashboardData.ts    # Dashboard queries
+│   ├── promisesData.ts
+│   ├── adminData.ts
+│   ├── pinata.ts
+│   ├── statusEngine.ts     # Vote → status computation
+│   └── pipelineEvents.ts
+├── models/                 # Mongoose schemas
+└── artifacts/              # Document folders
+    ├── buffer/             # Sample pledge/result files
+    ├── incoming/           # Watcher input
+    ├── uploaded/           # Web uploads (local)
+    ├── processed/
+    ├── unmatched/
+    └── error/
+```
