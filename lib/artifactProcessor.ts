@@ -281,6 +281,9 @@ async function moveFile(
   filename: string,
   dest: 'processed' | 'unmatched' | 'error'
 ) {
+  // On Vercel, filesystem is read-only except /tmp. Skip move; file is ephemeral anyway.
+  if (process.env.VERCEL) return;
+
   const base = join(process.cwd(), ARTIFACTS_PATH);
   let src = srcPath;
   const path = require('path');

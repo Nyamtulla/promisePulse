@@ -8,6 +8,14 @@ import type { PipelineEvent } from '@/lib/pipelineEvents';
 const ARTIFACTS_PATH = process.env.ARTIFACTS_PATH || './artifacts';
 const UPLOAD_DIR = 'uploaded';
 
+// On Vercel/serverless, /var/task is read-only. Use /tmp for uploads.
+function getUploadDir(): string {
+  if (process.env.VERCEL) {
+    return join('/tmp', 'artifact-uploads');
+  }
+  return join(process.cwd(), ARTIFACTS_PATH, UPLOAD_DIR);
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -28,7 +36,7 @@ export async function POST(request: Request) {
     const ext = originalName.split('.').pop() || '';
     const baseName = originalName.replace(/\.[^.]+$/, '').slice(0, 50) || 'artifact';
     const uniqueName = `${baseName}-${Date.now()}.${ext}`;
-    const uploadDir = join(process.cwd(), ARTIFACTS_PATH, UPLOAD_DIR);
+    const uploadDir = getUploadDir();
     const filePath = join(uploadDir, uniqueName);
 
     await mkdir(uploadDir, { recursive: true });
