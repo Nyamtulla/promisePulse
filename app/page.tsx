@@ -4,6 +4,10 @@ import { PipelineMonitor } from '@/components/PipelineMonitor';
 import { DashboardPanel } from '@/components/DashboardPanel';
 import { getDashboardData } from '@/lib/dashboardData';
 
+// Prevent prerendering at build time - Vercel build servers can't reach MongoDB Atlas.
+// This page needs DB access, so we render it on each request instead.
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const { promises, triggeredPromises, completedPromises, counts, openRounds } =
     await getDashboardData();
