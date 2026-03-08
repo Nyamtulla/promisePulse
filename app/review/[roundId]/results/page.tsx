@@ -28,42 +28,42 @@ export default async function ResultsPage({
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+      <h1 className="text-2xl font-bold text-slate-900">
         Review Round Results
       </h1>
       {promise && (
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
+        <p className="mt-2 text-slate-600">
           {typeof promise === 'object' && promise.promiseText
             ? promise.promiseText
-            : 'Promise'}
+            : 'Pledge'}
         </p>
       )}
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-3xl font-bold text-slate-900">
             {totalVotes}
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500">
             Total Votes
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm text-slate-500">
             Final Status
           </p>
           <StatusBadge status={finalStatus} />
         </div>
       </div>
 
-      <h2 className="mt-8 text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <h2 className="mt-8 text-lg font-semibold text-slate-900">
         Vote Distribution
       </h2>
       <div className="mt-4 space-y-2">
         {distribution?.map((d: { option: string; count: number; percentage: number }) => (
           <div
             key={d.option}
-            className="flex items-center justify-between rounded-lg border border-slate-200 p-3 dark:border-slate-700"
+            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3"
           >
             <span className="font-medium">{d.option.replace(/_/g, ' ')}</span>
             <span>
@@ -76,9 +76,9 @@ export default async function ResultsPage({
       {promiseId && (
         <Link
           href={`/promises/${promiseId}`}
-          className="mt-6 inline-block text-blue-600 hover:underline dark:text-blue-400"
+          className="mt-6 inline-block text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
         >
-          View promise detail
+          View pledge detail
         </Link>
       )}
     </Layout>

@@ -1,6 +1,6 @@
 import { Layout } from '@/components/Layout';
-import { ArtifactTable } from '@/components/ArtifactTable';
 import { AdminClient } from '@/components/AdminClient';
+import { ResetPledgesButton } from '@/components/ResetPledgesButton';
 
 async function getArtifacts() {
   const res = await fetch(
@@ -16,12 +16,13 @@ export default async function AdminPage() {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+      <h1 className="text-2xl font-bold text-slate-900">
         Admin – Artifact Processing
       </h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
+      <p className="mt-2 text-slate-600">
         View processing history and retry failed artifacts.
       </p>
+      <ResetPledgesButton className="mt-4" />
       <AdminClient artifacts={artifacts} />
     </Layout>
   );

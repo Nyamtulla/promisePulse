@@ -37,14 +37,14 @@ export interface IrrelevantResult {
 
 export type ClassificationResult = NewPromiseResult | PromiseUpdateResult | IrrelevantResult;
 
-const SYSTEM_PROMPT = `You are an AI classifier for a public promise tracking system focused on LOCAL INFRASTRUCTURE AND PUBLIC SERVICE promises. 
+const SYSTEM_PROMPT = `You are an AI classifier for a government commitment tracking system focused on GOVERNANCE AND PUBLIC SERVICE.
 
-Domain: roads, drainage, streetlights, water supply, bus stops, sanitation, public works.
+Domain: campaign pledges, manifesto items, everyday government promises and commitments—roads, drainage, streetlights, water supply, sanitation, public works, transparency, service delivery.
 
-For each artifact (speech, article, report), classify it as exactly one of:
-1. NEW_PROMISE - The artifact contains one or more new public commitments/promises about local infrastructure or public services.
-2. PROMISE_UPDATE - The artifact is a follow-up or progress report related to an EXISTING promise (e.g., "work has started", "road repairs completed in East Ward").
-3. IRRELEVANT - The artifact does not contain relevant promises or updates in the local infrastructure domain.
+For each artifact (speech, article, report, news), classify it as exactly one of:
+1. NEW_PROMISE - The artifact contains one or more new campaign pledges, government promises, manifesto commitments, or public commitments about governance or public services.
+2. PROMISE_UPDATE - The artifact is a follow-up or progress report related to an EXISTING pledge (e.g., "work has started", "road repairs completed downtown", "drainage project finished").
+3. IRRELEVANT - The artifact does not contain relevant pledges or updates in the governance domain.
 
 Respond with valid JSON only. No markdown or extra text.`;
 
@@ -56,7 +56,7 @@ export interface ExistingPromise {
 const CLASSIFY_PROMPT = (text: string, existingPromises?: ExistingPromise[]) => {
   let prompt = `Classify this artifact:\n\n${text.slice(0, 8000)}\n\n`;
   if (existingPromises && existingPromises.length > 0) {
-    prompt += `Existing promises in the system:\n`;
+    prompt += `Existing pledges in the system:\n`;
     for (const p of existingPromises) {
       prompt += `- ID: ${p.id} | ${p.summary}\n`;
     }

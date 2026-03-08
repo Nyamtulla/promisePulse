@@ -18,12 +18,29 @@ import {
   hashPromiseText,
   isBlockchainConfigured,
 } from './blockchain';
+import { emitPipelineEvent, type PipelineEvent } from './pipelineEvents';
 import mongoose from 'mongoose';
 
 const ARTIFACTS_PATH = process.env.ARTIFACTS_PATH || './artifacts';
+const REVIEW_DURATION_HOURS = process.env.REVIEW_ROUND_DURATION_HOURS
+  ? parseInt(process.env.REVIEW_ROUND_DURATION_HOURS, 10)
+  : null;
 const REVIEW_DURATION_DAYS = parseInt(process.env.REVIEW_ROUND_DURATION_DAYS || '7', 10);
 
-export async function processArtifact(inputPath: string): Promise<{ artifactId: string; error?: string }> {
+export interface ProcessArtifactOptions {
+  eventCollector?: PipelineEvent[];
+  onEvent?: (e: PipelineEvent) => void;
+}
+
+export async function processArtifact(
+  inputPath: string,
+  opts?: ProcessArtifactOptions
+): Promise<{ artifactId: string; error?: string }> {
+  const emit = (e: PipelineEvent) => {
+    opts?.eventCollector?.push(e);
+    opts?.onEvent?.(e);
+    emitPipelineEvent(e);
+  };
   const path = require('path');
   let filePath = inputPath;
   if (!path.isAbsolute(filePath) && !filePath.includes(path.sep)) {
@@ -54,15 +71,18 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
   try {
     artifact.processingStatus = 'PROCESSING';
     await artifact.save();
+    emit({ artifactId: artifact.id, filename, stage: 'detected', detail: 'Detected', message: 'New file detected in upload' });
 
     const readResult = await readArtifact(filePath, filename);
     artifact.extractedText = readResult.extractedText;
     artifact.fileSize = readResult.size;
     await artifact.save();
+    emit({ artifactId: artifact.id, filename, stage: 'extracted', detail: 'Extracted', message: 'Text content extracted from file' });
 
     const pinataCid = await uploadFileToPinata(filePath, filename);
     artifact.pinataCid = pinataCid;
     await artifact.save();
+    emit({ artifactId: artifact.id, filename, stage: 'stored', detail: 'On IPFS', message: 'File pinned to IPFS via Pinata' });
 
     const existingPromises: ExistingPromise[] = await PromiseRecord.find()
       .limit(50)
@@ -75,6 +95,23 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
       );
 
     const classification = await classifyArtifact(readResult.extractedText, existingPromises);
+    emit({
+      artifactId: artifact.id,
+      filename,
+      stage: 'classified',
+      detail:
+        classification.classification === 'NEW_PROMISE'
+          ? 'Pledge extracted by AI'
+          : classification.classification === 'PROMISE_UPDATE'
+            ? 'Update matched by AI'
+            : 'Irrelevant',
+      message:
+        classification.classification === 'NEW_PROMISE'
+          ? (classification as { rationale?: string }).rationale
+          : classification.classification === 'PROMISE_UPDATE'
+            ? (classification as { reason?: string }).reason
+            : (classification as { explanation?: string }).explanation,
+    });
 
     if (classification.classification === 'NEW_PROMISE') {
       for (const p of classification.promises) {
@@ -92,6 +129,7 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
           if (result) {
             txHash = result.txHash;
             onChainPromiseId = Number(result.promiseId);
+            emit({ artifactId: artifact.id, filename, stage: 'recorded', detail: 'Pledge recorded on-chain', message: 'New pledge written to blockchain' });
           }
         }
 
@@ -111,8 +149,8 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
         await TimelineEvent.create({
           promiseId: promise._id,
           eventType: 'PROMISE_RECORDED',
-          title: 'Promise Recorded',
-          description: `Promise extracted from artifact: ${p.summary || p.promiseText.slice(0, 80)}`,
+          title: 'Pledge Recorded',
+          description: `Campaign pledge extracted from artifact: ${p.summary || p.promiseText.slice(0, 80)}`,
           relatedArtifactId: artifact._id,
           txHash: txHash || undefined,
         });
@@ -129,7 +167,7 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
         artifact.classification = 'IRRELEVANT';
         artifact.processingStatus = 'UNMATCHED';
         artifact.processedAt = new Date();
-        artifact.errorMessage = 'PROMISE_UPDATE but no matched promise';
+        artifact.errorMessage = 'PROMISE_UPDATE but no matched pledge';
         await artifact.save();
         await moveFile(filePath, filename, 'unmatched');
         return { artifactId: artifact.id };
@@ -140,7 +178,7 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
         artifact.classification = 'IRRELEVANT';
         artifact.processingStatus = 'UNMATCHED';
         artifact.processedAt = new Date();
-        artifact.errorMessage = `Matched promise ${matchedId} not found`;
+        artifact.errorMessage = `Matched pledge ${matchedId} not found`;
         await artifact.save();
         await moveFile(filePath, filename, 'unmatched');
         return { artifactId: artifact.id };
@@ -153,6 +191,7 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
           pinataCid,
           classification.triggerType || 'update'
         );
+        emit({ artifactId: artifact.id, filename, stage: 'recorded', detail: 'Evidence recorded on-chain', message: 'Update evidence linked to existing pledge on blockchain' });
       }
 
       const trigger = await TriggerEvent.create({
@@ -165,7 +204,11 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
       });
 
       const endTime = new Date();
-      endTime.setDate(endTime.getDate() + REVIEW_DURATION_DAYS);
+      if (REVIEW_DURATION_HOURS != null) {
+        endTime.setTime(endTime.getTime() + REVIEW_DURATION_HOURS * 60 * 60 * 1000);
+      } else {
+        endTime.setDate(endTime.getDate() + REVIEW_DURATION_DAYS);
+      }
 
       let roundTxHash: string | null = null;
       let onChainReviewRoundId: number | null = null;
@@ -178,6 +221,7 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
         if (result) {
           roundTxHash = result.txHash;
           onChainReviewRoundId = Number(result.reviewRoundId);
+          emit({ artifactId: artifact.id, filename, stage: 'voting_opened', detail: 'Citizen voting opened', message: 'Citizens can vote on pledge progress' });
         }
       }
 
@@ -204,7 +248,7 @@ export async function processArtifact(inputPath: string): Promise<{ artifactId: 
         promiseId: promise._id,
         eventType: 'REVIEW_ROUND_OPENED',
         title: 'Review Round Opened',
-        description: classification.summary || 'Citizen voting opened for this update',
+        description: classification.summary || 'Citizen voting opened for this pledge update',
         relatedTriggerId: trigger._id,
         relatedReviewRoundId: reviewRound._id,
         relatedArtifactId: artifact._id,

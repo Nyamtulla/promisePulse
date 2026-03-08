@@ -32,20 +32,39 @@ export async function GET(
       .sort({ createdAt: 1 })
       .lean();
 
+    const p = promise as {
+      _id: { toString: () => string };
+      promiseText: string;
+      category: string;
+      region: string;
+      status: string;
+      sourceArtifactId: unknown;
+      sourcePinataCid: string;
+      createdAt: Date;
+      onChainTxHash?: string | null;
+      onChainPromiseId?: number | null;
+    };
+
     return NextResponse.json({
       promise: {
-        id: (promise as { _id: { toString: () => string } })._id?.toString?.(),
-        promiseText: (promise as { promiseText: string }).promiseText,
-        category: (promise as { category: string }).category,
-        region: (promise as { region: string }).region,
-        status: (promise as { status: string }).status,
-        sourceArtifact: (promise as { sourceArtifactId: unknown }).sourceArtifactId,
-        sourcePinataCid: (promise as { sourcePinataCid: string }).sourcePinataCid,
-        createdAt: (promise as { createdAt: Date }).createdAt,
+        id: p._id?.toString?.(),
+        promiseText: p.promiseText,
+        category: p.category,
+        region: p.region,
+        status: p.status,
+        sourceArtifact: p.sourceArtifactId,
+        sourcePinataCid: p.sourcePinataCid,
+        createdAt: p.createdAt,
+        onChainTxHash: p.onChainTxHash || null,
+        onChainPromiseId: p.onChainPromiseId ?? null,
       },
       triggers,
       openReviewRound: openRound,
       timeline,
+      blockchain: {
+        contractAddress: process.env.CONTRACT_ADDRESS || null,
+        explorerUrl: 'https://amoy.polygonscan.com',
+      },
     });
   } catch (err) {
     console.error('GET /api/promises/[id] error:', err);

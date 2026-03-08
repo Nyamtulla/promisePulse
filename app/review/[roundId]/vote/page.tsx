@@ -27,30 +27,30 @@ export default async function VotePage({
   const promise = round.promise;
   const promiseText = typeof promise === 'object' && promise?.promiseText
     ? promise.promiseText
-    : 'Unknown promise';
+    : 'Unknown pledge';
 
   const endTime = round.endTime ? new Date(round.endTime).toLocaleString() : null;
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-        Vote on Promise Progress
+      <h1 className="text-2xl font-bold text-slate-900">
+        Vote on Pledge Progress
       </h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
-        Has the promised change become visible in your community?
+      <p className="mt-2 text-slate-600">
+        Has this government commitment become visible in your community?
       </p>
       {endTime && (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-slate-500">
           Voting ends: {endTime}
         </p>
       )}
       <Link
         href={`/review/${roundId}/results`}
-        className="mt-2 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
+        className="mt-2 inline-block text-sm text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
       >
         View results
       </Link>
-      <div className="mt-6 max-w-lg rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+      <div className="mt-6 max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <VoteForm
           reviewRoundId={roundId}
           promiseText={promiseText}

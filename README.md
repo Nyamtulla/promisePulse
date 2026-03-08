@@ -1,6 +1,6 @@
-# PromisePulse
+# GovernancePulse
 
-AI-powered public promise tracking for local infrastructure accountability.
+AI & blockchain–powered tracking for campaign pledges and everyday government commitments.
 
 ---
 
@@ -8,7 +8,7 @@ AI-powered public promise tracking for local infrastructure accountability.
 
 Local governments and representatives make infrastructure promises—roads, drainage, streetlights, sanitation—but citizens often have no transparent way to track whether those promises are kept. Documents and updates scatter across speeches, newsletters, and reports. Accountability is opaque.
 
-**PromisePulse** solves this by:
+**GovernancePulse** solves this by:
 
 - Turning unstructured documents into structured, auditable promises
 - Storing evidence immutably on IPFS and blockchain
@@ -19,7 +19,7 @@ Local governments and representatives make infrastructure promises—roads, drai
 
 ## What
 
-PromisePulse is a full-stack platform that:
+GovernancePulse is a full-stack platform that:
 
 1. **Monitors** a local `artifacts/incoming` folder for new documents
 2. **Extracts** text from `.txt`, `.md`, and `.pdf` files
@@ -99,19 +99,18 @@ npm run compile && npm run deploy
 ### Run
 
 ```bash
-npm run dev      # Terminal 1
-npm run watcher  # Terminal 2
+npm run dev
 ```
 
 ### Try It
 
-1. Open **http://localhost:3000**
-2. Add `artifacts/incoming/promise.txt` with infrastructure promises (roads, drainage, streetlights, etc.)
-3. Watch the dashboard — promise appears after AI classification and on-chain recording
-4. Add a follow-up file (e.g. "Sector 7 work has started") → triggers review round
+1. Open **http://localhost:3000** or **/dashboard**
+2. **Drag & drop** (or click to upload) a `.txt`, `.md`, or `.pdf` file with infrastructure promises (roads, drainage, streetlights, etc.)
+3. Watch the **live pipeline** — artifact detected → extracted → classified → stored on IPFS → recorded on blockchain
+4. Upload a follow-up file (e.g. "Downtown road work has started") → triggers review round
 5. Vote at Dashboard → "Vote now" → View results
 
-**Note:** The watcher processes only files added *after* it starts.
+**Optional:** Run `npm run watcher` to also process files dropped into `artifacts/incoming`.
 
 ---
 

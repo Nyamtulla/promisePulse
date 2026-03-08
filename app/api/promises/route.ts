@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { PromiseRecord } from '@/models';
+import { PromiseRecord, ReviewRound, Vote } from '@/models';
 
 export async function GET(request: Request) {
   try {
@@ -9,11 +9,30 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const region = searchParams.get('region');
     const status = searchParams.get('status');
+    const triggered = searchParams.get('triggered') === 'true';
+    const reviewed = searchParams.get('reviewed') === 'true';
 
     const filter: Record<string, unknown> = {};
     if (category) filter.category = category;
     if (region) filter.region = region;
-    if (status) filter.status = status;
+
+    if (reviewed) {
+      const roundIdsWithVotes = await Vote.distinct('reviewRoundId');
+      const reviewedPromiseIds = await ReviewRound.distinct('promiseId', {
+        status: 'CLOSED',
+        _id: { $in: roundIdsWithVotes },
+      });
+      filter._id = { $in: reviewedPromiseIds };
+    } else {
+      const active = searchParams.get('active') === 'true';
+      if (active) {
+        filter.status = { $in: ['UNDER_REVIEW', 'IN_PROGRESS', 'PARTIALLY_DONE'] };
+      } else if (triggered) {
+        filter.status = { $in: ['UNDER_REVIEW', 'IN_PROGRESS', 'PARTIALLY_DONE', 'DONE'] };
+      } else if (status) {
+        filter.status = status;
+      }
+    }
 
     const promises = await PromiseRecord.find(filter)
       .sort({ createdAt: -1 })

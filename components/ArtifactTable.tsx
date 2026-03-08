@@ -18,45 +18,45 @@ interface ArtifactTableProps {
 
 export function ArtifactTable({ artifacts, onRetry }: ArtifactTableProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-      <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-        <thead className="bg-slate-50 dark:bg-slate-800">
+    <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <table className="min-w-full divide-y divide-slate-200">
+        <thead className="bg-slate-50">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500">
               Filename
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500">
               Status
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500">
               Classification
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500">
               Pinata CID
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
-              Matched Promise
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500">
+              Matched Pledge
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500">
               Error
             </th>
             {onRetry && (
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-500">
                 Actions
               </th>
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
+        <tbody className="divide-y divide-slate-200 bg-white">
           {artifacts.map((a) => (
             <tr key={a.id}>
-              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
                 {a.filename}
               </td>
               <td className="px-4 py-3">
                 <StatusBadge status={a.processingStatus} />
               </td>
-              <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+              <td className="px-4 py-3 text-sm text-slate-600">
                 {a.classification || '-'}
               </td>
               <td className="px-4 py-3 text-sm">
@@ -65,7 +65,7 @@ export function ArtifactTable({ artifacts, onRetry }: ArtifactTableProps) {
                     href={`https://ipfs.io/ipfs/${a.pinataCid}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
                   >
                     {a.pinataCid.slice(0, 12)}...
                   </a>
@@ -73,19 +73,19 @@ export function ArtifactTable({ artifacts, onRetry }: ArtifactTableProps) {
                   '-'
                 )}
               </td>
-              <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+              <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-600">
                 {a.matchedPromise
                   ? a.matchedPromise.promiseText.slice(0, 60) + '...'
                   : '-'}
               </td>
-              <td className="max-w-xs truncate px-4 py-3 text-sm text-red-600 dark:text-red-400">
+              <td className="max-w-xs truncate px-4 py-3 text-sm text-red-600">
                 {a.errorMessage || '-'}
               </td>
               {onRetry && a.processingStatus === 'ERROR' && (
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => onRetry(a.id)}
-                    className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-sm font-medium text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
                   >
                     Retry
                   </button>

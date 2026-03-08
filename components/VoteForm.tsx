@@ -58,8 +58,8 @@ export function VoteForm({ reviewRoundId, promiseText, onSuccess }: VoteFormProp
 
   if (done) {
     return (
-      <div className="rounded-lg bg-emerald-50 p-4 dark:bg-emerald-900/30">
-        <p className="font-medium text-emerald-800 dark:text-emerald-200">
+      <div className="rounded-lg bg-teal-50/80 p-4">
+        <p className="font-medium text-teal-800">
           Vote recorded successfully.
         </p>
       </div>
@@ -68,7 +68,7 @@ export function VoteForm({ reviewRoundId, promiseText, onSuccess }: VoteFormProp
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-400">{promiseText}</p>
+      <p className="text-sm text-slate-600">{promiseText}</p>
       <div>
         <label className="mb-2 block text-sm font-medium">Your wallet address (voter ID)</label>
         <input
@@ -76,7 +76,7 @@ export function VoteForm({ reviewRoundId, promiseText, onSuccess }: VoteFormProp
           value={voterId}
           onChange={(e) => setVoterId(e.target.value)}
           placeholder="0x..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white"
         />
       </div>
       <div>
@@ -103,14 +103,14 @@ export function VoteForm({ reviewRoundId, promiseText, onSuccess }: VoteFormProp
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={2}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white"
         />
       </div>
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
         disabled={loading}
-        className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+        className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white disabled:opacity-50 hover:bg-slate-800"
       >
         {loading ? 'Submitting...' : 'Submit Vote'}
       </button>

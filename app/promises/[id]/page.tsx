@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Layout } from '@/components/Layout';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Timeline } from '@/components/Timeline';
+import { BlockchainProof } from '@/components/BlockchainProof';
 
 async function getPromise(id: string) {
   const res = await fetch(
@@ -22,23 +23,23 @@ export default async function PromiseDetailPage({
   const data = await getPromise(id);
   if (!data) notFound();
 
-  const { promise, triggers, openReviewRound, timeline } = data;
+  const { promise, triggers, openReviewRound, timeline, blockchain } = data;
 
   return (
     <Layout>
-      <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-bold text-slate-900">
           {promise.promiseText}
         </h1>
         <div className="mt-3 flex flex-wrap gap-2">
           <StatusBadge status={promise.status} />
           {promise.category && (
-            <span className="text-sm text-slate-500 dark:text-slate-400">
+            <span className="text-sm text-slate-500">
               {promise.category}
             </span>
           )}
           {promise.region && (
-            <span className="text-sm text-slate-500 dark:text-slate-400">
+            <span className="text-sm text-slate-500">
               {promise.region}
             </span>
           )}
@@ -48,7 +49,7 @@ export default async function PromiseDetailPage({
             href={`https://ipfs.io/ipfs/${promise.sourcePinataCid}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
+            className="mt-2 inline-block text-sm text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
           >
             View source artifact
           </a>
@@ -59,24 +60,24 @@ export default async function PromiseDetailPage({
             href={`/review/${String(openReviewRound._id ?? openReviewRound.id)}/vote`}
             className="mt-4 inline-block rounded-lg bg-amber-500 px-4 py-2 font-medium text-white hover:bg-amber-600"
           >
-            Vote in open review round
+            Vote on this pledge
           </Link>
         )}
       </div>
 
       {triggers && triggers.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="text-lg font-semibold text-slate-900">
             Evidence
           </h2>
           <ul className="mt-4 space-y-2">
             {triggers.map((t: { _id?: unknown; id?: string; summary: string; triggerType: string }, idx: number) => (
               <li
                 key={t._id != null ? String(t._id) : t.id ?? `trigger-${idx}`}
-                className="rounded-lg border border-slate-200 p-4 dark:border-slate-700"
+                className="rounded-lg border border-slate-200 bg-white p-4"
               >
-                <p className="text-slate-800 dark:text-slate-200">{t.summary}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-slate-800">{t.summary}</p>
+                <p className="text-xs text-slate-500">
                   {t.triggerType}
                 </p>
               </li>
@@ -87,7 +88,7 @@ export default async function PromiseDetailPage({
 
       {timeline && timeline.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="text-lg font-semibold text-slate-900">
             Timeline
           </h2>
           <div className="mt-4">
@@ -103,6 +104,17 @@ export default async function PromiseDetailPage({
             />
           </div>
         </div>
+      )}
+
+      {blockchain && (
+        <BlockchainProof
+          contractAddress={blockchain.contractAddress}
+          explorerUrl={blockchain.explorerUrl}
+          onChainPromiseId={promise.onChainPromiseId ?? null}
+          onChainTxHash={promise.onChainTxHash ?? null}
+          triggers={triggers || []}
+          timeline={timeline || []}
+        />
       )}
     </Layout>
   );
