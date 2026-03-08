@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { connectDB } from '@/lib/db';
 import { processArtifact } from '@/lib/artifactProcessor';
 import { isSupportedFile } from '@/lib/artifactReader';
 import type { PipelineEvent } from '@/lib/pipelineEvents';
@@ -38,6 +39,9 @@ export async function POST(request: Request) {
     const uniqueName = `${baseName}-${Date.now()}.${ext}`;
     const uploadDir = getUploadDir();
     const filePath = join(uploadDir, uniqueName);
+
+    // Establish DB connection before processArtifact (avoids Mongoose buffering timeout)
+    await connectDB();
 
     await mkdir(uploadDir, { recursive: true });
     const buffer = Buffer.from(await file.arrayBuffer());
