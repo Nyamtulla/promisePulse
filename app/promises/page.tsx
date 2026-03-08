@@ -2,21 +2,9 @@ import { Suspense } from 'react';
 import { Layout } from '@/components/Layout';
 import { PromiseCard } from '@/components/PromiseCard';
 import { PromisesFilters } from '@/components/PromisesFilters';
+import { getPromisesWithFilters } from '@/lib/promisesData';
 
-async function getPromises(searchParams: Record<string, string | undefined>) {
-  const params = new URLSearchParams();
-  if (searchParams.category) params.set('category', searchParams.category);
-  if (searchParams.region) params.set('region', searchParams.region);
-  if (searchParams.status) params.set('status', searchParams.status);
-  if (searchParams.triggered === 'true') params.set('triggered', 'true');
-  if (searchParams.active === 'true') params.set('active', 'true');
-  if (searchParams.reviewed === 'true') params.set('reviewed', 'true');
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/promises?${params}`,
-    { cache: 'no-store' }
-  );
-  return res.json();
-}
+export const dynamic = 'force-dynamic';
 
 export default async function PromisesPage({
   searchParams,
@@ -24,8 +12,14 @@ export default async function PromisesPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
-  const data = await getPromises(params);
-  const promises = data.promises || [];
+  const { promises } = await getPromisesWithFilters({
+    category: params.category,
+    region: params.region,
+    status: params.status,
+    triggered: params.triggered === 'true',
+    active: params.active === 'true',
+    reviewed: params.reviewed === 'true',
+  });
 
   return (
     <Layout>

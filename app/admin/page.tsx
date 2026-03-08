@@ -1,18 +1,12 @@
 import { Layout } from '@/components/Layout';
 import { AdminClient } from '@/components/AdminClient';
 import { ResetPledgesButton } from '@/components/ResetPledgesButton';
+import { getAdminArtifacts } from '@/lib/adminData';
 
-async function getArtifacts() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/artifacts`,
-    { cache: 'no-store' }
-  );
-  return res.json();
-}
+export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
-  const data = await getArtifacts();
-  const artifacts = data.artifacts || [];
+  const { artifacts } = await getAdminArtifacts();
 
   return (
     <Layout>
